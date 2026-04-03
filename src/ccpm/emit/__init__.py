@@ -9,6 +9,7 @@ from ccpm.emit.claude_md import emit_claude_md
 from ccpm.emit.env_file import emit_env_file
 from ccpm.emit.files import emit_file_assets
 from ccpm.emit.mcp import emit_mcp
+from ccpm.emit.session import emit_session
 from ccpm.emit.settings import emit_settings
 from ccpm.emit.shell import emit_shell
 
@@ -41,5 +42,7 @@ def emit_all(compiled: CompiledProfile, output_dir: Path) -> list[Path]:
     for asset_type in ("skills", "commands", "agents", "hook_scripts"):
         assets = getattr(compiled, asset_type)
         written.extend(emit_file_assets(assets, asset_type, output_dir))
+
+    written.extend(emit_session(compiled.session, output_dir))
 
     return written

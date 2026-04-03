@@ -55,12 +55,13 @@ def main(ctx, profile_path):
     help="Output directory. Defaults to a temp staging dir.",
 )
 @click.option("--var", multiple=True, callback=_parse_vars, expose_value=True, help="Set env var: KEY=VALUE.")
+@click.option("--session", "session_log", type=click.Path(exists=True), default=None, help="Session log (.jsonl) to include for resumption.")
 @click.option("--verbose", "-v", is_flag=True, help="Show merge decisions.")
 @click.pass_context
-def build(ctx, profile, output_dir, var, verbose):
+def build(ctx, profile, output_dir, var, session_log, verbose):
     """Compile a profile into resolved config files."""
     search_path = get_search_path(ctx.obj["extra_dirs"])
-    compiled = compile_profile(profile, search_path, env_overrides=var, verbose=verbose)
+    compiled = compile_profile(profile, search_path, env_overrides=var, verbose=verbose, session_log=session_log)
 
     if output_dir is None:
         output_dir = Path(tempfile.mkdtemp(prefix="ccpm-build-"))
@@ -79,18 +80,19 @@ def build(ctx, profile, output_dir, var, verbose):
 @click.argument("target")
 @click.option("--project", type=click.Path(path_type=Path), default=None, help="Project directory for local deploy.")
 @click.option("--var", multiple=True, callback=_parse_vars, expose_value=True, help="Set env var: KEY=VALUE.")
+@click.option("--session", "session_log", type=click.Path(exists=True), default=None, help="Session log (.jsonl) to include for resumption.")
 @click.option("--dry-run", is_flag=True, help="Show what would change without writing.")
 @click.option("--no-backup", is_flag=True, help="Skip backup of existing config.")
 @click.option("--verbose", "-v", is_flag=True, help="Show merge decisions.")
 @click.option("--docker-target-path", default="/root", help="Target path inside Docker container.")
 @click.pass_context
-def deploy(ctx, profile, target, project, var, dry_run, no_backup, verbose, docker_target_path):
+def deploy(ctx, profile, target, project, var, session_log, dry_run, no_backup, verbose, docker_target_path):
     """Build and deploy a profile to a target.
 
     TARGET can be: local, docker CONTAINER, ssh USER@HOST, or dir PATH
     """
     search_path = get_search_path(ctx.obj["extra_dirs"])
-    compiled = compile_profile(profile, search_path, env_overrides=var, verbose=verbose)
+    compiled = compile_profile(profile, search_path, env_overrides=var, verbose=verbose, session_log=session_log)
 
     console.print(f"[bold]Resolved chain:[/bold] {' -> '.join(compiled.chain_names)}")
 

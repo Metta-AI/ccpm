@@ -1,0 +1,161 @@
+"""Emit session logs for cross-environment deployment."""
+
+from __future__ import annotations
+
+import json
+import shutil
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+DEFAULT_WARNING = (
+    "WARNING TO CLAUDE: Your instance has been moved and may be in an incompatible "
+    "environment or have completely new CLAUDE.md's, SKILL's, permissions, and more. "
+    "The session history above is from a previous environment. Verify your current "
+    "environment before making assumptions based on prior context. Check the current "
+    "CLAUDE.md, available tools, and permissions before proceeding."
+)
+
+
+def project_dir_hash(cwd: str) -> str:
+    """Convert a cwd path to Claude Code's project directory hash.
+
+    Claude Code stores sessions at ~/.claude/projects/<hash>/<session-id>.jsonl
+    where <hash> is the absolute path with '/' replaced by '-'.
+    """
+    return cwd.replace("/", "-")
+
+
+def _extract_session_id(log_path: Path) -> str:
+    """Extract session ID from a JSONL log file.
+
+    Tries to read the sessionId field from entries. Falls back to the filename stem.
+    """
+    try:
+        with open(log_path) as f:
+            for line in f:
+                entry = json.loads(line)
+                if "sessionId" in entry:
+                    return entry["sessionId"]
+    except (json.JSONDecodeError, OSError):
+        pass
+    return log_path.stem
+
+
+def _extract_cwd(log_path: Path) -> str | None:
+    """Extract the original cwd from session log entries."""
+    try:
+        with open(log_path) as f:
+            for line in f:
+                entry = json.loads(line)
+                if "cwd" in entry:
+                    return entry["cwd"]
+    except (json.JSONDecodeError, OSError):
+        pass
+    return None
+
+
+def _inject_warning(log_path: Path, output_path: Path, warning: str) -> None:
+    """Copy session log and append a warning message at the end."""
+    shutil.copy2(log_path, output_path)
+
+    # Read the last entry to get session metadata for the warning entry
+    session_id = _extract_session_id(log_path)
+    cwd = _extract_cwd(log_path) or "/"
+
+    # Create a summary-style entry that Claude will see when resuming
+    warning_entry = {
+        "parentUuid": None,
+        "isSidechain": False,
+        "type": "summary",
+        "summary": warning,
+        "uuid": str(uuid.uuid4()),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "isMeta": False,
+        "userType": "external",
+        "cwd": cwd,
+        "sessionId": session_id,
+    }
+
+    with open(output_path, "a") as f:
+        f.write(json.dumps(warning_entry) + "\n")
+
+
+def emit_session(
+    session_config: dict[str, Any] | None,
+    output_dir: Path,
+    target_cwd: str | None = None,
+) -> list[Path]:
+    """Emit session log files to the output directory.
+
+    Places the session JSONL at:
+        output_dir/.claude/projects/<project-hash>/<session-id>.jsonl
+
+    Also creates a resume helper script at:
+        output_dir/.claude/ccpm-resume.sh
+
+    Returns list of paths written.
+    """
+    if not session_config:
+        return []
+
+    resolved_log = session_config.get("_resolved_log")
+    if not resolved_log:
+        return []
+
+    log_path = Path(resolved_log)
+    if not log_path.is_file():
+        raise FileNotFoundError(
+            f"Session log not found: {log_path}\n"
+            f"  Referenced by: session.log"
+        )
+
+    session_id = _extract_session_id(log_path)
+    original_cwd = _extract_cwd(log_path)
+
+    # Determine the project dir hash for the target environment
+    if target_cwd:
+        proj_hash = project_dir_hash(target_cwd)
+    elif "project_dir" in session_config:
+        proj_hash = project_dir_hash(session_config["project_dir"])
+    elif original_cwd:
+        proj_hash = project_dir_hash(original_cwd)
+    else:
+        proj_hash = project_dir_hash("/")
+
+    # Build the warning message
+    warning = session_config.get("warning", DEFAULT_WARNING)
+
+    # Write session log with warning injected
+    projects_dir = output_dir / ".claude" / "projects" / proj_hash
+    projects_dir.mkdir(parents=True, exist_ok=True)
+    session_file = projects_dir / f"{session_id}.jsonl"
+    _inject_warning(log_path, session_file, warning)
+
+    written = [session_file]
+
+    # Also copy the session's supporting directory if it exists
+    # (contains subagents/ and tool-results/)
+    session_support_dir = log_path.parent / session_id
+    if session_support_dir.is_dir():
+        dest_support = projects_dir / session_id
+        if dest_support.exists():
+            shutil.rmtree(dest_support)
+        shutil.copytree(session_support_dir, dest_support)
+        written.append(dest_support)
+
+    # Generate resume helper script
+    resume_script = output_dir / ".claude" / "ccpm-resume.sh"
+    resume_script.parent.mkdir(parents=True, exist_ok=True)
+    resume_script.write_text(
+        f"#!/bin/bash\n"
+        f"# Generated by ccpm - resume a deployed session\n"
+        f"# Session ID: {session_id}\n"
+        f"# Original cwd: {original_cwd or 'unknown'}\n"
+        f"claude --resume {session_id}\n"
+    )
+    resume_script.chmod(0o755)
+    written.append(resume_script)
+
+    return written

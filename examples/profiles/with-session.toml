@@ -1,0 +1,26 @@
+# Profile demonstrating session log deployment.
+# Deploys a session log so Claude can resume from a prior conversation,
+# with a warning that the environment may have changed.
+[profile]
+name = "with-session"
+description = "Profile with session log for cross-environment resumption"
+extends = ["base-readonly"]
+
+[settings]
+model = "us.anthropic.claude-opus-4-6-v1[1m]"
+
+[claude_md]
+strategy = "append"
+content = """
+## Resumed Session
+This environment was set up by ccpm with a session from a prior environment.
+Verify all paths and tools before proceeding.
+"""
+
+# Session log to include — enables `claude --resume <session-id>` in the target
+[session]
+log = "../sessions/example-session.jsonl"
+# Optional: override the project directory hash for session placement
+# project_dir = "/home/user/my-project"
+# Optional: custom warning (default warns about environment changes)
+# warning = "Custom warning message here"

@@ -61,12 +61,18 @@ class CompiledProfile:
         """Shell config entries in chain order (for append/replace)."""
         return self.data.get("_shell_chain", [])
 
+    @property
+    def session(self) -> dict[str, Any] | None:
+        """Session log configuration (log path, warning, project_dir)."""
+        return self.data.get("_session")
+
 
 def compile_profile(
     name: str,
     search_path: list[Path],
     env_overrides: dict[str, str] | None = None,
     verbose: bool = False,
+    session_log: str | None = None,
 ) -> CompiledProfile:
     """Compile a profile by resolving its chain and deep-merging step by step."""
     chain = resolve_chain(name, search_path)
@@ -81,6 +87,7 @@ def compile_profile(
     acc: dict[str, Any] = {}
     claude_md_chain: list[dict[str, Any]] = []
     shell_chain: list[dict[str, Any]] = []
+    session_config: dict[str, Any] | None = None
 
     for i, (profile_name, path, raw_data) in enumerate(chain):
         # Load env_file references before env expansion so their vars are available
@@ -104,6 +111,17 @@ def compile_profile(
         shell = profile_data.pop("shell", None)
         if shell:
             shell_chain.append(shell)
+
+        # Session config: last profile wins (child overrides parent)
+        session = profile_data.pop("session", None)
+        if session:
+            # Resolve log path relative to profile
+            if "log" in session:
+                log_path = Path(session["log"])
+                if not log_path.is_absolute():
+                    log_path = path.parent / log_path
+                session["_resolved_log"] = str(log_path.resolve())
+            session_config = session
 
         # Collect mcp_servers and merge by name
         mcp_servers = profile_data.pop("mcp_servers", [])
@@ -146,6 +164,16 @@ def compile_profile(
     # Attach chained sections
     acc["_claude_md_chain"] = claude_md_chain
     acc["_shell_chain"] = shell_chain
+    if session_config:
+        acc["_session"] = session_config
+
+    # CLI --session override: takes precedence over TOML [session]
+    if session_log:
+        log_path = Path(session_log).resolve()
+        acc["_session"] = {
+            "log": session_log,
+            "_resolved_log": str(log_path),
+        }
 
     return CompiledProfile(acc, chain_names)
 

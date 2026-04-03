@@ -92,7 +92,7 @@ ccpm deploy python-dev "ssh user@devbox"
 
 ## CLI Reference
 
-### `ccpm build <profile> [-o DIR] [--var KEY=VALUE] [-v]`
+### `ccpm build <profile> [-o DIR] [--var KEY=VALUE] [--session FILE] [-v]`
 
 Compile a profile into resolved config files. Outputs to a temp directory by default, or specify `--output-dir`.
 
@@ -106,7 +106,7 @@ Resolved chain: base-readonly -> git-permissions -> edit-permissions -> python-d
 4 files written to /tmp/ccpm-build-xxxxx
 ```
 
-### `ccpm deploy <profile> <target> [--project DIR] [--var KEY=VALUE] [--dry-run] [--no-backup] [-v]`
+### `ccpm deploy <profile> <target> [--project DIR] [--var KEY=VALUE] [--session FILE] [--dry-run] [--no-backup] [-v]`
 
 Build and deploy a profile to a target.
 
@@ -317,6 +317,42 @@ alias cc='claude'
 
 Emitted as `.bashrc.d/ccpm.sh`. Shell entries from parent profiles chain using the specified strategy.
 
+### `[session]` - Session Log Deployment
+
+Deploy a session log so Claude can resume a prior conversation in the target environment. A warning is injected at the end of the session to alert Claude that the environment may have changed.
+
+```toml
+[session]
+log = "../sessions/my-session.jsonl"
+# Optional: override where the session is placed (defaults to cwd from the log)
+# project_dir = "/workspace/my-project"
+# Optional: custom warning message (default warns about environment changes)
+# warning = "You are now running in a Docker container. Check your tools."
+```
+
+The session JSONL is copied to `.claude/projects/<project-hash>/` matching Claude Code's expected layout. A resume helper script is generated at `.claude/ccpm-resume.sh`.
+
+You can also pass a session log via the CLI without putting it in the profile:
+
+```bash
+ccpm build python-dev --session ~/.claude/projects/-Users-me/abc123.jsonl
+ccpm deploy docker-deploy "docker my-ctr" --session ./saved-session.jsonl
+```
+
+After deploying, resume in the target environment:
+
+```bash
+# Using the generated script
+.claude/ccpm-resume.sh
+
+# Or directly
+claude --resume <session-id>
+```
+
+The default warning injected into the session:
+
+> WARNING TO CLAUDE: Your instance has been moved and may be in an incompatible environment or have completely new CLAUDE.md's, SKILL's, permissions, and more. The session history above is from a previous environment. Verify your current environment before making assumptions based on prior context.
+
 ### `[[skills]]`, `[[commands]]`, `[[agents]]`, `[[hook_scripts]]` - File Assets
 
 Copy files/directories into the output:
@@ -419,6 +455,10 @@ output/
     commands/              # copied command files
     agents/                # copied agent files
     hooks/                 # copied hook scripts
+    projects/              # session logs (if [session] is configured)
+      <project-hash>/
+        <session-id>.jsonl # session log with warning injected
+    ccpm-resume.sh         # helper script to resume session
   .mcp.json                # MCP server configuration
   CLAUDE.md                # chained claude_md content
   .env.claude              # environment variables (sourceable)
@@ -443,6 +483,7 @@ The `examples/profiles/` directory contains profiles demonstrating every feature
 | `docker-deploy.toml` | Full container deployment profile |
 | `replace-example.toml` | `!replace:` escape hatch |
 | `json-ref.toml` | External JSON file references |
+| `with-session.toml` | Session log deployment for cross-environment resumption |
 | `env-vars.toml` | `${VAR:-default}` expansion |
 
 ## Development
@@ -454,7 +495,7 @@ uv sync
 uv run pytest -v
 ```
 
-171 tests covering deep merge, env expansion, chain resolution, compilation, emission, round-trips, CLI, discovery, backup, credentials, shell config, and env file loading.
+193 tests covering deep merge, env expansion, chain resolution, compilation, emission, round-trips, CLI, discovery, backup, credentials, shell config, env file loading, and session log deployment.
 
 ## License
 
