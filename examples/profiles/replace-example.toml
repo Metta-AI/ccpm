@@ -1,0 +1,14 @@
+# Demonstrates the !replace: escape hatch.
+# Extends base-readonly but wipes its permissions entirely.
+[profile]
+name = "replace-example"
+description = "Demo of !replace: to wipe parent permissions"
+extends = ["base-readonly"]
+
+[settings]
+model = "us.anthropic.claude-opus-4-6-v1[1m]"
+
+# Wipe parent's permissions — start fresh
+[settings."!replace:permissions"]
+allow = ["Read"]
+# deny is now empty; parent's allow list is gone too

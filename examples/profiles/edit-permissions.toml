@@ -1,0 +1,14 @@
+# Write/edit permissions for active development.
+# Usually extended on top of base-readonly + git-permissions.
+[profile]
+name = "edit-permissions"
+description = "File editing and writing permissions"
+
+[settings.permissions]
+allow = [
+    "Edit",
+    "Write",
+    "Bash(mkdir:*)",
+    "Bash(touch:*)",
+    "Bash(chmod:*)",
+]

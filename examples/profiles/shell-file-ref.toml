@@ -1,0 +1,11 @@
+# Profile loading shell config from an external file.
+[profile]
+name = "shell-file-ref"
+description = "Shell config from external file"
+
+[settings.permissions]
+allow = ["Read"]
+
+[shell]
+strategy = "replace"
+file = "${EXAMPLES_DIR}/shell/container-setup.sh"

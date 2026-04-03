@@ -1,0 +1,29 @@
+# Profile demonstrating shell configuration.
+# Emits .bashrc.d/ccpm.sh with PATH, aliases, and tool setup.
+[profile]
+name = "with-shell"
+description = "Profile with shell configuration"
+
+[settings.permissions]
+allow = ["Read", "Glob"]
+
+# Shell config — emitted as .bashrc.d/ccpm.sh
+[shell]
+strategy = "append"
+content = """
+# Tool paths
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+# uv (Python package manager)
+if command -v uv &>/dev/null; then
+    eval "$(uv generate-shell-completion bash)"
+fi
+
+# Node.js via nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+
+# Aliases
+alias cc='claude'
+alias ccp='claude-profile'
+"""

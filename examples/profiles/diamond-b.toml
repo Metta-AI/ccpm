@@ -1,0 +1,8 @@
+# Diamond dependency test — left branch.
+[profile]
+name = "diamond-b"
+description = "Diamond left branch"
+extends = ["diamond-a"]
+
+[settings.permissions]
+allow = ["Glob"]

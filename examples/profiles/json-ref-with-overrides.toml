@@ -1,0 +1,10 @@
+# Profile that loads settings from JSON, then overrides specific fields inline.
+[profile]
+name = "json-ref-with-overrides"
+description = "JSON file reference with inline overrides"
+extends = ["json-ref"]
+
+[settings]
+file = "../json/extra-settings.json"
+# Inline override on top of the loaded JSON:
+effortLevel = "high"

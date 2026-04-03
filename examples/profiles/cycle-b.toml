@@ -1,0 +1,5 @@
+# Cycle detection test — B extends A (creates cycle).
+[profile]
+name = "cycle-b"
+description = "Cycle test node B"
+extends = ["cycle-a"]

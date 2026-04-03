@@ -1,0 +1,29 @@
+# Python development profile.
+# Extends base-readonly, git, and edit permissions.
+# Adds pytest, ruff, and common Python tooling.
+[profile]
+name = "python-dev"
+description = "Python development with testing and linting"
+extends = ["base-readonly", "git-permissions", "edit-permissions"]
+
+[settings]
+model = "us.anthropic.claude-opus-4-6-v1[1m]"
+effortLevel = "high"
+
+[settings.permissions]
+allow = [
+    "Bash(pytest:*)",
+    "Bash(ruff check:*)",
+    "Bash(ruff format:*)",
+    "Bash(uv run:*)",
+    "Bash(pip install:*)",
+]
+
+[claude_md]
+strategy = "append"
+content = """
+## Python Conventions
+- Use ruff for linting and formatting
+- Run `pytest -v` for tests
+- Use type hints everywhere
+"""

@@ -1,0 +1,15 @@
+# Demonstrates environment variable resolution.
+# Uses ${VAR} and ${VAR:-default} syntax.
+[profile]
+name = "env-vars"
+description = "Environment variable resolution demo"
+
+[settings]
+model = "${CUSTOM_MODEL:-us.anthropic.claude-haiku-4-5-20251001-v1:0}"
+
+[settings.permissions]
+allow = ["Read", "Bash(${CUSTOM_TOOL:-echo}:*)"]
+
+[env]
+CLAUDE_CODE_USE_BEDROCK = "${USE_BEDROCK:-1}"
+CUSTOM_VAR = "${HOME}/.claude/custom"

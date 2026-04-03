@@ -1,0 +1,7 @@
+# Minimal profile — just read-only permissions, nothing else.
+[profile]
+name = "minimal"
+description = "Bare minimum read-only access"
+
+[settings.permissions]
+allow = ["Read", "Glob", "Grep"]

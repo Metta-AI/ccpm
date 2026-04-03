@@ -1,0 +1,11 @@
+# Demonstrates CLAUDE.md loaded from an external file.
+[profile]
+name = "claude-md-file-ref"
+description = "CLAUDE.md from external file"
+
+[settings.permissions]
+allow = ["Read"]
+
+[claude_md]
+strategy = "replace"
+file = "${EXAMPLES_DIR}/claude-md-sample.md"

@@ -1,0 +1,8 @@
+# Profile that loads settings from an external JSON file.
+# Demonstrates file references for settings.
+[profile]
+name = "json-ref"
+description = "Profile loading settings from JSON file"
+
+[settings]
+file = "../json/base-settings.json"

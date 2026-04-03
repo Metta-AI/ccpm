@@ -1,0 +1,17 @@
+# Profile demonstrating env file loading.
+# Pulls variables from a gitignored .env file at build time.
+[profile]
+name = "with-env-file"
+description = "Profile loading env vars from .env file"
+
+[settings.permissions]
+allow = ["Read"]
+
+# Load from a .env file (path relative to this profile's directory)
+# The .env file should be gitignored — it contains local secrets.
+[env]
+env_file = "../env-files/.env.example"
+# You can also load multiple files (later files override earlier):
+# env_files = ["../.env.defaults", "../.env.local"]
+# Inline vars merge on top of file-loaded vars:
+EXTRA_VAR = "inline-value"

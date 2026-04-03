@@ -1,0 +1,8 @@
+# Diamond dependency test — right branch.
+[profile]
+name = "diamond-c"
+description = "Diamond right branch"
+extends = ["diamond-a"]
+
+[settings.permissions]
+allow = ["Grep"]

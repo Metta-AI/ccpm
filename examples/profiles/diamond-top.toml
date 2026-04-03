@@ -1,0 +1,9 @@
+# Diamond dependency test — top node that extends both branches.
+# diamond-a should only be applied once (deduplication).
+[profile]
+name = "diamond-top"
+description = "Diamond top — extends both branches"
+extends = ["diamond-b", "diamond-c"]
+
+[settings.permissions]
+allow = ["WebFetch"]

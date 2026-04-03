@@ -1,0 +1,16 @@
+# Demonstrates CLAUDE.md with replace strategy.
+[profile]
+name = "claude-md-replace"
+description = "CLAUDE.md replace strategy demo"
+extends = ["python-dev"]
+
+[claude_md]
+strategy = "replace"
+content = """
+# Custom Agent Instructions
+This completely replaces any parent CLAUDE.md content.
+
+## Rules
+- Be concise
+- Run tests first
+"""

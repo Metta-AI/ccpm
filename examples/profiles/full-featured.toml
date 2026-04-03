@@ -1,0 +1,72 @@
+# Full-featured profile demonstrating all TOML sections.
+# Extends python-dev (which extends base-readonly + git + edit).
+[profile]
+name = "full-featured"
+description = "Kitchen-sink profile showing every feature"
+extends = ["python-dev"]
+
+[settings]
+cleanupPeriodDays = 9999999
+
+[settings.permissions]
+deny = [
+    "Read(secrets/)",
+    "Bash(rm -rf*)",
+]
+
+# Hooks
+[[settings.hooks.SessionStart]]
+commands = ["echo 'Session started'"]
+
+[[settings.hooks.PostToolUse]]
+matcher = "Edit|Write"
+commands = ["echo 'File modified: $CLAUDE_FILE_PATHS'"]
+
+[[settings.hooks.UserPromptSubmit]]
+commands = ["echo 'Prompt submitted'"]
+
+# Plugins
+[settings.enabledPlugins]
+"pr-workflow@softmax-plugins" = true
+
+[settings.extraKnownMarketplaces.softmax-plugins]
+source = { source = "github", repo = "Metta-AI/softmax-plugins" }
+
+# CLAUDE.md
+[claude_md]
+strategy = "append"
+content = """
+## Project Rules
+1. Always run tests before committing
+2. No force pushes to main
+"""
+
+# MCP servers
+[[mcp_servers]]
+name = "github"
+command = "gh"
+args = ["mcp"]
+
+[[mcp_servers]]
+name = "context7"
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+# File assets
+[[skills]]
+source = "${EXAMPLES_DIR}/skills/my-skill"
+
+[[commands]]
+source = "${EXAMPLES_DIR}/commands/todo.md"
+
+[[agents]]
+source = "${EXAMPLES_DIR}/agents/reviewer.md"
+
+[[hook_scripts]]
+source = "${EXAMPLES_DIR}/hooks/session-start.sh"
+target = ".claude/hooks/session-start.sh"
+
+# Environment
+[env]
+ANTHROPIC_MODEL = "us.anthropic.claude-opus-4-6-v1"
+CLAUDE_CODE_USE_BEDROCK = "1"

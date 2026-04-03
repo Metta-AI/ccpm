@@ -1,0 +1,21 @@
+# Base read-only profile with common safe defaults.
+# Good starting point for most profiles to extend.
+[profile]
+name = "base-readonly"
+description = "Safe read-only defaults with web access"
+
+[settings]
+effortLevel = "medium"
+cleanupPeriodDays = 30
+
+[settings.permissions]
+allow = [
+    "Read",
+    "Glob",
+    "Grep",
+    "WebFetch",
+    "Bash(ls*)",
+]
+
+[env]
+CLAUDE_CODE_USE_BEDROCK = "1"

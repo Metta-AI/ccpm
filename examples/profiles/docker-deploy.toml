@@ -1,0 +1,63 @@
+# Full profile for deploying Claude Code to a Docker container.
+# Combines credentials, shell setup, and a locked-down permission set.
+[profile]
+name = "docker-deploy"
+description = "Docker container deployment profile"
+extends = ["base-readonly", "git-permissions"]
+
+[settings]
+model = "us.anthropic.claude-opus-4-6-v1[1m]"
+effortLevel = "high"
+
+[settings.permissions]
+allow = ["Edit", "Write"]
+deny = ["Bash(rm -rf*)"]
+
+# Credentials needed in the container
+[[credentials]]
+name = "anthropic-api-key"
+env_var = "ANTHROPIC_API_KEY"
+description = "Required for Claude Code to function"
+
+[[credentials]]
+name = "github-token"
+env_var = "GITHUB_TOKEN"
+description = "For gh CLI and GitHub MCP server"
+# Can pull from local gh auth if available
+source = "gh auth token 2>/dev/null"
+optional = true
+
+# Shell setup for the container
+[shell]
+strategy = "replace"
+content = """
+# Container shell setup
+export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin"
+
+# Claude Code env
+export CLAUDE_CODE_USE_BEDROCK="${CLAUDE_CODE_USE_BEDROCK:-0}"
+
+# Source credentials
+if [ -f "$HOME/.env.claude" ]; then
+    source "$HOME/.env.claude"
+fi
+"""
+
+[claude_md]
+strategy = "replace"
+content = """
+# Container Agent
+You are running in a Docker container.
+- All changes are local to this container
+- Network access may be restricted
+- Use the tools available in your permission set
+"""
+
+[[mcp_servers]]
+name = "github"
+command = "gh"
+args = ["mcp"]
+
+[env]
+CLAUDE_CODE_USE_BEDROCK = "0"
+TERM = "xterm-256color"

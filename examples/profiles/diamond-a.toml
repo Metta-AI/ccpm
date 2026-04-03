@@ -1,0 +1,10 @@
+# Diamond dependency test — base node.
+[profile]
+name = "diamond-a"
+description = "Diamond dependency base"
+
+[settings]
+effortLevel = "low"
+
+[settings.permissions]
+allow = ["Read"]
